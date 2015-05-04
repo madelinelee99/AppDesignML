@@ -2,7 +2,6 @@ var fs = require( "fs" );
 var http = require( "http" );
 var sqlite = require( "sqlite3" );
 
-
 function listClasses(req, res)
 {
   var db = new sqlite.Database("school.sqlite");
@@ -88,7 +87,7 @@ function listEnrollments(req, res)
 
   db.each("SELECT  CLASSES.NAME AS CNAME, * FROM ENROLLMENTS " +
    "JOIN CLASSES ON CLASSES.ID = ENROLLMENTS.CLASSID " +
-   "JOIN STUDENTS ON STUDENTS.ID = ENROLLMENTS.STUDENTID", function (err, row) {
+   "JOIN STUDENTS ON STUDENTS.ID = ENROLLMENTS.STUDENTID ORDER BY CLASSES.NAME, STUDENTS.NAME", function (err, row) {
     console.log(row);
     console.log(err);
   resp_text += "<tr>" + "<td>" + row.CNAME + "</td>" +
@@ -150,53 +149,53 @@ function addStudent( req, res )
 {
     var db = new sqlite.Database( "school.sqlite" );
     console.log( req.url );
-    formInputParser( req.url );
-    var form_text = req.url.split( "?" )[1];
-    var form_inputs = form_text.split( "&" );
-    var name_input = form_inputs[0].split( "=" );
-    var year_input = form_inputs[0].split( "=" );
-    var id_input = form_inputs[0].split( "=" );
-    var name = null, year = null, id = null;
-    for( var i = 0; i < form_inputs.length; i++ ) {
-        var inp = form_inputs[i].split( "=" );
-        if( inp[0] == 'name' ) {
-            name = inp[1];
-        }
-        else if( inp[0] == 'year' ) {
-            year = inp[1];
-        }
-        else if( inp[0] == 'id' ) {
-            id = inp[1];
-        }
-    }
-    if( name == null || year == null || id == null )
-    {
-        res.writeHead( 200 );
-        res.end( "ERROR" );
-        return;
-    }
-    /* perf, stage numbers that exist in DB */
-    var name_exists = false;
-    db.all( "SELECT COUNT(NAME) FROM STUDENTS WHERE ID = "+name,
-        function( err, rows ) {
-            name_exists = rows[0]['COUNT(NAME)'] == 1;
-        });
-    if( !name_exists )
-    {
-      name = decodeURIComponent( ( name_input[1] + '' ).replace( /\+/g, '%20' ) );
-      year = decodeURIComponent( ( year_input[1] + '' ).replace( /\+/g, '%20' ) );
-      id = decodeURIComponent( ( id_input[1] + '' ).replace( /\+/g, '%20' ) );
-      var sql_cmd = "INSERT INTO STUDENTS ('NAME', 'YEAR', 'ID') VALUES ('"+
-         name[1]+"', '"+
-         year[1]+"', '"+
-         id[1]+"')";
-       db.run( sql_cmd );
-    }
+    var inputs = formInputParser( req.url );
+    var sql_cmd = "INSERT INTO STUDENTS ('NAME', 'YEAR', 'ID') VALUES ('"+
+      inputs.name +"', '"+
+       inputs.year +"', '"+
+       inputs.id +"')";
+     db.run( sql_cmd );
 
-    db.close();
-    res.writeHead( 200 );
-    res.end( "<html><body>Added!!!</body></html>" );
+     db.close();
+     res.writeHead( 200 );
+     res.end( "<html><body>Student Added!!!</body></html>" );
+
 }
+
+function addEnrollment( req, res )
+{
+    var db = new sqlite.Database( "school.sqlite" );
+    console.log( req.url );
+    var inputs = formInputParser( req.url );
+    var classId = 0;
+    var studentId = 0;
+    db.each("SELECT ID FROM CLASSES WHERE NAME = '" + inputs.className +"'", function (err, row) {
+      console.log(row);
+      console.log(err);
+      classId = row.Id;
+      console.log(classId);
+    db.each("SELECT ID FROM STUDENTS WHERE NAME = '" + inputs.studentName +"'", function (err, row) {
+        console.log(row);
+        console.log(err);
+        studentId = row.Id;
+        console.log(studentId);
+
+        var sql_cmd = "INSERT INTO ENROLLMENTS ('CLASSID', 'STUDENTID') VALUES ('"+
+          classId +"', '"+
+          studentId +"')";
+         db.run( sql_cmd );
+
+         db.close();
+
+      } );
+
+  } );
+
+  res.writeHead( 200 );
+  res.end( "<html><body> Enrollment Added!!! </body></html>" );
+  
+}
+
 
 
 
@@ -230,7 +229,7 @@ function serverFn( req, res )
     {
         filename = "./index.html";
     }
-    if( filename.substring(0, 12) == "list_classes?" )
+    if( filename.substring(0, 13) == "list_classes?")
     {
         listClasses( req, res );
     }
@@ -250,9 +249,13 @@ function serverFn( req, res )
     {
         listTeachingAssignments( req, res );
     }
-    else if( filename.substring(0, 11) == "add_student?" )
+    else if( filename.substring(0, 11) == "add_student" )
     {
         addStudent( req, res );
+    }
+    else if( filename.substring(0, 14) == "add_enrollment" )
+    {
+        addEnrollment( req, res );
     }
     else
     {
