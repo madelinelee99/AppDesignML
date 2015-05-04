@@ -169,12 +169,16 @@ function addEnrollment( req, res )
     var inputs = formInputParser( req.url );
     var classId = 0;
     var studentId = 0;
-    db.each("SELECT ID FROM CLASSES WHERE NAME = '" + inputs.className +"'", function (err, row) {
+    var className = inputs.className.split("+").join(" ");
+    console.log(className);
+    db.each("SELECT ID FROM CLASSES WHERE NAME = '" + className +"'", function (err, row) {
       console.log(row);
       console.log(err);
       classId = row.Id;
       console.log(classId);
-    db.each("SELECT ID FROM STUDENTS WHERE NAME = '" + inputs.studentName +"'", function (err, row) {
+      var studentName = inputs.studentName.split("+").join(" ");
+      console.log(studentName);
+    db.each("SELECT ID FROM STUDENTS WHERE NAME = '" + studentName +"'", function (err, row) {
         console.log(row);
         console.log(err);
         studentId = row.Id;
@@ -193,7 +197,7 @@ function addEnrollment( req, res )
 
   res.writeHead( 200 );
   res.end( "<html><body> Enrollment Added!!! </body></html>" );
-  
+
 }
 
 
