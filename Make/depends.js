@@ -1,3 +1,5 @@
+/* Run jshint clean!!! */
+
 var fs = require( "fs" );
 
 /* What if the user doesn't type the right number of arguments? */
@@ -12,11 +14,14 @@ var targets = {}
 for( var i = 0; i < lines.length; i++ )
 {
     var target = {};
+    if( /\s*([a-z]+)\s*\:((?:[a-z]+(?:\s+|$))*)/
+    {
     var line = lines[ i ];
     console.log( line );
     /* What about format errors in the input file? */
     /* Consider using regexes instead of split */
     /* line.match( ??? ) */
+
     var colon = line.split( ":" );
     if( colon.length != 2 )
     {
@@ -27,6 +32,12 @@ for( var i = 0; i < lines.length; i++ )
     /* What if there's no target for a dependency? */
     target.visited = false;
     targets[ target.name ] = target;
+    console.log(targets)
+  }
+  else
+  {
+    console.log("Error: Line " + i + ": '" + lines[i] + "'' is not in the correct format.(letter:letter letter)");
+  }
 }
 
 console.log( targets );
@@ -38,10 +49,10 @@ function trace_dependencies( prev, target )
     {
         /* ... */
     }
-    if( visited in target )
+    /*if( visited in target )
     {
-        /* ... */
-    }
+        /* ...
+    }*/
     /* ... */
 
     if( target.visited )
